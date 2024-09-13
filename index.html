@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ビデオ診察アプリ</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- ビデオ電話部分 -->
+        <div class="left-side">
+            <h1>🏥Doctorとビデオチャット🏥</h1>
+        <!-- 以下がビデオ用のコード -->
+        <div class="grid-container">
+            <div id="local" class="item">
+             <video id="local-video" autoplay playsinline></video>
+             <audio id="local-audio" autoplay muted controls></audio>
+             <p class="id-text">ID: <span id="my-id"></span></p>
+             <button id="join-button" class="item" label="button">Room作成/参加</button>
+             <input id="room-name" placeholder="Room名"></input>
+             <button id="local-mute-buton" class="item" label="button" disabled>映像・音声OFF</button>
+             <button id="leave-button" class="item" label="button"　disabled>Room閉じる</button>
+           </div>
+           <div id="remote" class="item">
+             <video id="remote-video" autoplay playsinline></video>
+             <audio id="remote-audio" autoplay controls></audio>
+             <p class="id-text">ID: <span id="remote-id"></span></p>
+             <div id="button-area"></div>
+           </div>
+         </div>
+        <!-- 以上がビデオ用のコード -->
+       
+        </div>
+
+        <div class="right-side">
+            <div id="subtitles" class="subtitles-box">
+                <!-- 字幕がここに表示されます -->
+            </div>
+
+            <div id="question-box" class="input-box">
+                <input type="text" id="question-input" placeholder="質問を入力">
+                <button id="send-question">送信</button>
+                <button id="delete-answer">回答削除</button> <!-- 回答削除ボタン -->
+            </div>
+
+            <div id="response" class="response-box">
+                <!-- AIの回答がここに表示されます -->
+            </div>
+
+            <div id="subtitle-buttons" class="subtitle-buttons">
+                <button id="hide-subtitles">字幕非表示</button>
+                <button id="show-subtitles">字幕表示</button>
+                <button id="clear-subtitles">字幕削除</button> <!-- 字幕削除ボタン -->
+            </div>
+
+        </div>
+
+    </div>
+    <!-- jQueryの読み込み -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+    <!-- SkyWayのSDKの読み込み -->
+    <script src="https://cdn.jsdelivr.net/npm/@skyway-sdk/room/dist/skyway_room-latest.js"></script> 
+    <!-- SkyWayのJSの読み込み -->
+    <script src="skyway2.js"></script>
+    <!-- jsの読み込み -->  
+
+    <!-- Firebase App (firebase-app.js) の読み込み -->
+    <script type="module">
+    
+    // Firebase SDKをインポート
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+        import { getDatabase, ref, push, onChildAdded } 
+        from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js"; /*追加が必要*/
+     // TODO: Add SDKs for Firebase products that you want to use
+     // https://firebase.google.com/docs/web/setup#available-libraries
+
+    
+    const firebaseConfig = {
+    apiKey: ":::::::::::::::",
+    authDoåmain: ":::::::::::::::::",
+    databaseURL: "::::::::::::::::::::::",
+    projectId: ":::::::::::::",
+    storageBucket: "::::::::::::::::",
+    messagingSenderId: ":::::::::::::::",
+    appId: "::::::::::::::::::"
+  };
+
+    // Firebaseの初期化
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const questionsRef = ref(db, 'questions');
+
+    //   Web Speech APIを使用して音声をテキストに変換
+      function startSpeechRecognition() {
+            const recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+            recognition.lang = 'ja-JP'; // 言語を日本語に設定（必要に応じて変更）
+            recognition.continuous = true; // 連続して音声を認識
+            recognition.interimResults = false; // 暫定結果を表示しない
+
+            recognition.onresult = function(event) {
+                const lastResultIndex = event.results.length - 1;
+                const transcript = event.results[lastResultIndex][0].transcript.trim();
+                
+                // リアルタイムデータベースに保存
+                push(questionsRef, {
+                    question: '音声',
+                    answer: transcript,
+                    timestamp: new Date().toISOString()
+                });
+            };
+
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error:', event.error);
+            };
+
+            recognition.onend = function() {
+                console.log('Speech recognition ended');
+                recognition.start(); // 自動的に再スタート
+            };
+
+            recognition.start();
+        };
+
+    $(document).ready(function() {
+        // 字幕の表示・非表示機能
+        $('#hide-subtitles').click(function() {
+            $('#subtitles').hide();
+        });
+    
+        $('#show-subtitles').click(function() {
+            $('#subtitles').show();
+        });
+    
+        // 字幕を全て削除する機能
+        $('#clear-subtitles').click(function() {
+            $('#subtitles').empty();
+        });
+    
+        // 回答を削除する機能
+        $('#delete-answer').click(function() {
+            $('#response').empty();
+        });
+    
+        // 質問を送信する
+        $('#send-question').click(async function() {
+            const question = $('#question-input').val().trim();
+            if (question) {
+                $('#response').text('AIが回答を生成中です...');
+    
+                // ChatGPT APIを使用して回答を取得
+                const aiResponse = await getAIResponse(question);
+    
+                // 回答欄にのみ質問と回答を表示
+                $('#response').html('<div><strong>質問:</strong> ' + escapeHtml(question) + '<br><strong>回答:</strong> ' + escapeHtml(aiResponse) + '</div>');
+    
+                // Firebaseに質問と回答を保存
+                push(questionsRef, { question: question, answer: aiResponse });
+                
+                // 質問入力ボックスをクリア
+                $('#question-input').val('');
+            }
+        });
+    
+        // Enterキーで送信
+        $('#question-input').keypress(function(e) {
+            if (e.which === 13) { // Enterキー
+                $('#send-question').click();
+            }
+        });
+    
+             // 回答削除ボタン
+            $('#delete-response').click(function() {
+            $('#response').text(''); // 回答を削除
+            });
+
+            // 字幕非表示ボタン
+            $('#hide-subtitles').click(function() {
+            $('#subtitles').hide();
+            });
+
+            // 字幕表示ボタン
+            $('#show-subtitles').click(function() {
+            $('#subtitles').show();
+            });
+
+
+            // Enterキーで送信
+            $('#question-input').keypress(function(e) {
+                if (e.which === 13) { // Enterキー
+                    $('#send-question').click();
+                }
+            });
+
+            // AIの応答を取得する関数
+            async function getAIResponse(question) {
+                const apiKey = '::::::::::::::::::::::'; // OpenAIのAPIキーを設定
+                const apiUrl = 'https://api.openai.com/v1/chat/completions';
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: 'gpt-4',
+                            messages: [{ role: 'user', content: question }]
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        return data.choices[0].message.content.trim();
+                    } else {
+                        console.error('Error:', data);
+                        return 'AIからの回答を取得できませんでした。';
+                    }
+                } catch (error) {
+                    console.error('Fetch Error:', error);
+                    return 'エラーが発生しました。';
+                }
+            }
+
+            // HTMLエスケープ関数（XSS対策）
+            function escapeHtml(text) {
+                return text
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+        });
+
+</script>
+  
+</body>
+</html>
