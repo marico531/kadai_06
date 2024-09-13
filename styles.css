@@ -21,26 +21,53 @@
 
 #remote-video {
     flex: 1;
-    width: calc(100% - 20px); /* 左右のマージンを考慮してサイズを調整 */
-    height: calc(100% - 40px); /* 上下のマージンを考慮してサイズを調整 */
+    width: calc(100% - 10px); /* 左右のマージンを考慮してサイズを調整 */
+    height: calc(100% - 20px); /* 上下のマージンを考慮してサイズを調整 */
     object-fit: cover;
     margin: 20px 10px;
     display: block;
     background-color: black; /* ビデオの背景を黒に変更 */
 }
 
-.right-side {
+#local-video {
+    flex: 1;
+    width: calc(100% - 10px); /* 左右のマージンを考慮してサイズを調整 */
+    height: calc(100% - 20px); /* 上下のマージンを考慮してサイズを調整 */
+    object-fit: cover;
+    margin: 20px 10px;
+    display: block;
+    background-color: black; /* ビデオの背景を黒に変更 */
+}
+
+
+/* .right-side {
     flex: 1;
     display: grid;
     grid-template-rows: 1fr 1fr 1fr;
     gap: 10px;
     padding: 10px;
-}
 
-.video-box, .subtitles-box, .input-box, .response-box {
+} */
+.right-side {
+    display: flex;
+    flex-direction: column; /* 縦に並べる */
+    width: 400px; /*必要に応じて幅を調整 */ 
+    height: calc(100% - 20px); /* 上下のマージンを考慮してサイズを調整 */
+    margin: 20px; 
+ } 
+
+.video-box,.input-box, .response-box {
     border: 1px solid #ccc;
     padding: 10px;
     box-sizing: border-box;
+}
+
+.subtitles-box {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-bottom: 10px;
+    height: 100px; /* 字幕BOXの高さ */
+    overflow-y: auto; /* コンテンツが多い場合はスクロール */ 
 }
 
 /* 以下がビデオ用 */
@@ -53,29 +80,19 @@ video {
 
 /* 以上がビデオ用 */
 
-
 h1 {
     font-size: 24px;
-}
-
-.subtitles-box {
-    overflow-y: scroll;
 }
 
 .input-box {
     display: flex;
     align-items: center;
+    margin-bottom: 10px;
 }
 
 .input-box input {
-    flex: 1;
-    padding: 5px;
-    margin-right: 10px;
-}
-
-button {
-    padding: 5px 10px;
-    cursor: pointer;
+    flex-grow: 1; /* 入力ボックスをボタンに合わせて伸縮 */
+    margin-right: 5px;
 }
 
 .response-box {
@@ -114,7 +131,7 @@ button:hover {
 .subtitle-buttons {
     display: flex;
     justify-content: space-between;
-    margin-top: 10px;
+    margin-top: 10px;/* ボタンを均等に並べる */
 }
 
 .subtitle-buttons button {
