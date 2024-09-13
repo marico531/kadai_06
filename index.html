@@ -186,14 +186,6 @@
             $('#subtitles').show();
             });
 
-
-            // Enterキーで送信
-            $('#question-input').keypress(function(e) {
-                if (e.which === 13) { // Enterキー
-                    $('#send-question').click();
-                }
-            });
-
             // AIの応答を取得する関数
             async function getAIResponse(question) {
                 const apiKey = '::::::::::::::::::::::'; // OpenAIのAPIキーを設定
