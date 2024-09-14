@@ -1,5 +1,4 @@
-# kadai_06
-# kadai_06
+# kadai_0６
 # ①課題番号-プロダクト名
 
 Doctorとおしゃべり
